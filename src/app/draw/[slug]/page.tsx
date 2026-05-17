@@ -20,7 +20,7 @@ export default async function DrawLobbyPage({ params }: PageProps) {
           hasDrawn: true,
         },
         orderBy: {
-          name: 'asc'
+          id: 'asc'
         }
       }
     }

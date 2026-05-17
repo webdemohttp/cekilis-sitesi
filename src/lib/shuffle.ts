@@ -21,10 +21,12 @@ function shuffleArray<T>(array: T[]): T[] {
 
 /**
  * Generates a valid Secret Santa matchmaking.
- * It creates a single closed loop containing all participants.
+ * It uses a true random derangement search algorithm with an automatic retry mechanism.
  * This guarantees:
- * 1. Derangement: No one is assigned to themselves.
+ * 1. Derangement: No one is assigned to themselves (Giver !== Receiver).
  * 2. Everyone gives exactly once and receives exactly once.
+ * 3. True randomized matchmaking rather than a simple sequential circle loop.
+ * 4. Automatic retry loop if a self-matching collision occurs.
  * 
  * Throws an error if the array has fewer than 2 elements.
  */
@@ -33,17 +35,35 @@ export function generateMatches(participants: ParticipantInput[]): Match[] {
     throw new Error('At least 2 participants are required for Secret Santa.');
   }
 
-  const shuffled = shuffleArray(participants);
-  const matches: Match[] = [];
+  const original = [...participants];
+  let shuffled: ParticipantInput[] = [];
+  let isValid = false;
+  let attempts = 0;
+  const maxAttempts = 5000; // Safety safeguard to prevent any infinite loops
 
-  for (let i = 0; i < shuffled.length; i++) {
-    const giver = shuffled[i];
-    // Next person in the shuffled array, or wrap around to the first
-    const receiver = shuffled[(i + 1) % shuffled.length];
+  while (!isValid && attempts < maxAttempts) {
+    attempts++;
+    shuffled = shuffleArray(original);
     
+    // Check if it's a valid derangement
+    isValid = true;
+    for (let i = 0; i < original.length; i++) {
+      if (original[i].name === shuffled[i].name) {
+        isValid = false;
+        break;
+      }
+    }
+  }
+
+  if (!isValid) {
+    throw new Error('Failed to generate a valid randomized matchmaking after multiple attempts.');
+  }
+
+  const matches: Match[] = [];
+  for (let i = 0; i < original.length; i++) {
     matches.push({
-      giverName: giver.name,
-      receiverName: receiver.name
+      giverName: original[i].name,
+      receiverName: shuffled[i].name
     });
   }
 
