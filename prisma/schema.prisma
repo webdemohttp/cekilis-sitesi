@@ -1,0 +1,29 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Draw {
+  id          String        @id @default(uuid())
+  slug        String        @unique
+  title       String
+  createdAt   DateTime      @default(now())
+  expiresAt   DateTime      // Set to createdAt + 30 days
+  participants Participant[]
+}
+
+model Participant {
+  id           String   @id @default(uuid())
+  drawId       String
+  name         String
+  assignedToId String   // The ID of the person this participant MUST buy a gift for (Pre-calculated)
+  targetName   String   // Cache the name string of the target for easy UI rendering
+  hasDrawn     Boolean  @default(false) // Tracking if they watched the animation
+  draw         Draw     @relation(fields: [drawId], references: [id], onDelete: Cascade)
+
+  @@unique([drawId, name])
+}
